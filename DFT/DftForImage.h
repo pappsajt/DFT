@@ -25,6 +25,8 @@ private:
     cv::Mat _magnitudeOfComplexMat;
 
     void DoDftForImage();
+    void IterateRows();
+    void DftForRow(const int& currentRowOfComplexMat, const int& columnIndexOfBeginning, const int& length);
     void ComputeMagnitude();
     void SwitchToLogarithmicScale();
     void RearrangeQuadrants();

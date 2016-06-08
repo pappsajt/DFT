@@ -19,7 +19,45 @@ void DftForImage::Process()
 
 void DftForImage::DoDftForImage()
 {
-    //to be implemented!
+    IterateRows();
+}
+
+void DftForImage::IterateRows()
+{
+    for (int rowIndex = 0; rowIndex < _complexMat.rows; ++rowIndex)
+    {
+        DftForRow(rowIndex, 0, _complexMat.cols);
+    }
+}
+
+void DftForImage::DftForRow(const int& currentRowOfComplexMat, const int& columnIndexOfBeginning, const int& length)
+{
+    for (int localIndex = 0; localIndex < length/2-1; ++localIndex)
+    {
+        int firstIndex = columnIndexOfBeginning + localIndex;
+        int secondIndex = firstIndex + length / 2;
+
+        std::complex<float> a, b;
+        a.real(_complexMat.at<cv::Vec2f>(currentRowOfComplexMat, firstIndex)[0]);
+        a.imag(_complexMat.at<cv::Vec2f>(currentRowOfComplexMat, firstIndex)[1]);
+        b.real(_complexMat.at<cv::Vec2f>(currentRowOfComplexMat, secondIndex)[0]);
+        b.imag(_complexMat.at<cv::Vec2f>(currentRowOfComplexMat, secondIndex)[1]);
+
+        std::complex<float> firstNewElement, secondNewElement;
+        const float pi = std::acos(-1);
+        const std::complex<float> i(0, 1);
+        firstNewElement = (a + b) / (float)2;
+        secondNewElement = (a - b) * std::exp((float)(-2)*pi*i*(float)localIndex/(float)length) / (float)2;
+
+        _complexMat.at<cv::Vec2f>(currentRowOfComplexMat, firstIndex) = {firstNewElement.real(), firstNewElement.imag()};
+        _complexMat.at<cv::Vec2f>(currentRowOfComplexMat, secondIndex) = {secondNewElement.real(), secondNewElement.imag()};
+    }
+
+    if (length > 2)
+    {
+        DftForRow(currentRowOfComplexMat, columnIndexOfBeginning, length / 2);
+        DftForRow(currentRowOfComplexMat, columnIndexOfBeginning + length / 2, length / 2);
+    }
 }
 
 void DftForImage::ComputeMagnitude()
@@ -38,7 +76,7 @@ void DftForImage::SwitchToLogarithmicScale()
 
 void DftForImage::RearrangeQuadrants()
 {
-    // rearrange the quadrants of Fourier image  so that the origin is at the image center
+    // rearrange the quadrants of Fourier image so that the origin is at the image center
     int cx = _magnitudeOfComplexMat.cols/2;
     int cy = _magnitudeOfComplexMat.rows/2;
 
