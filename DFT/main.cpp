@@ -1,3 +1,7 @@
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
 #include <iostream>
 #include <vector>
 #include <complex>
@@ -5,9 +9,7 @@
 #include <iomanip>
 #include <cmath>
 
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+#include "DftForImage.h"
 
 const std::string inputPath = "../input/";
 
@@ -17,6 +19,9 @@ int main()
 {
     cv::Mat source;
     ReadImage(source);
+
+    DftForImage dft(source);
+    dft.Process();
 
     return 0;
 }
@@ -39,10 +44,4 @@ void ReadImage(cv::Mat& img)
 
         img = cv::imread(inputPath+nameOfImg, cv::IMREAD_GRAYSCALE);
     }
-
-    cv::namedWindow("window1");
-    cv::moveWindow("window1", 10, 10);
-    cv::imshow("window1", img);
-    cv::waitKey();
-    cv::destroyAllWindows();
 }
