@@ -23,15 +23,19 @@ private:
     cv::Mat _planes[2];
     cv::Mat _complexMat;
     cv::Mat _magnitudeOfComplexMat;
+    std::vector<int> _bitReversalHelpingArrayForRowIndices;
+    std::vector<int> _bitReversalHelpingArrayForColumnIndices;
 
     void DoDftForImage();
     void IterateRows();
     void DftForRow(const int& currentRowOfComplexMat, const int& columnIndexOfBeginning, const int& length);
+    void RestoreNaturalColumnIndexOrderFromReversedOrder();
     void ComputeMagnitude();
     void SwitchToLogarithmicScale();
     void RearrangeQuadrants();
     void NormalizeImage();
     void ShowResult();
+    void ComputeBitReversalHelpingArray(std::vector<int>& _bitReversalHelpingArray, const int& numberOfIndices);
 };
 
 #endif // DFTFORIMAGE_H

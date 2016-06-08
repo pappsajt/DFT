@@ -5,6 +5,9 @@ DftForImage::DftForImage(cv::Mat source) : _source(source)
     _planes[0] = cv::Mat_<float>(source);
     _planes[1] = cv::Mat::zeros(source.size(), CV_32F);
     cv::merge(_planes, 2, _complexMat);
+
+    ComputeBitReversalHelpingArray(_bitReversalHelpingArrayForRowIndices, _complexMat.rows);
+    ComputeBitReversalHelpingArray(_bitReversalHelpingArrayForColumnIndices, _complexMat.cols);
 }
 
 void DftForImage::Process()
@@ -15,6 +18,32 @@ void DftForImage::Process()
     RearrangeQuadrants();
     NormalizeImage();
     ShowResult();
+}
+
+void DftForImage::ComputeBitReversalHelpingArray(std::vector<int>& bitReversalHelpingArray, const int& numberOfIndices)
+{
+    const int exponent = std::log2(numberOfIndices);
+
+    for (int i = 0; i < numberOfIndices; ++i)
+    {
+        bitReversalHelpingArray.push_back(0);
+    }
+
+    bitReversalHelpingArray[0] = 0;
+    int base = 1;
+    int reversed = numberOfIndices / 2;
+    for (int digit = 1; digit <= exponent; ++digit)
+    {
+        bitReversalHelpingArray[base] = reversed;
+        int index = 1;
+        while (index < base)
+        {
+            bitReversalHelpingArray[base+index] = bitReversalHelpingArray[base] + bitReversalHelpingArray[index];
+            ++index;
+        }
+        base *= 2;
+        reversed /= 2;
+    }
 }
 
 void DftForImage::DoDftForImage()
@@ -28,6 +57,8 @@ void DftForImage::IterateRows()
     {
         DftForRow(rowIndex, 0, _complexMat.cols);
     }
+
+    RestoreNaturalColumnIndexOrderFromReversedOrder();
 }
 
 void DftForImage::DftForRow(const int& currentRowOfComplexMat, const int& columnIndexOfBeginning, const int& length)
@@ -57,6 +88,21 @@ void DftForImage::DftForRow(const int& currentRowOfComplexMat, const int& column
     {
         DftForRow(currentRowOfComplexMat, columnIndexOfBeginning, length / 2);
         DftForRow(currentRowOfComplexMat, columnIndexOfBeginning + length / 2, length / 2);
+    }
+}
+
+void DftForImage::RestoreNaturalColumnIndexOrderFromReversedOrder()
+{
+    for (int i = 0; i < _complexMat.cols; ++i)
+    {
+        if (i < _bitReversalHelpingArrayForColumnIndices[i])
+        {
+            //swap _complexMat's i. column and _complexMat's _bitReversalHelpingArrayForColumnIndices[i]. column:
+
+            cv::Mat tempColumn = _complexMat.col(i).clone();
+            _complexMat.col(_bitReversalHelpingArrayForColumnIndices[i]).copyTo(_complexMat.col(i));
+            tempColumn.copyTo(_complexMat.col(_bitReversalHelpingArrayForColumnIndices[i]));
+        }
     }
 }
 
