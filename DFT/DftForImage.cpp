@@ -48,10 +48,10 @@ void DftForImage::ComputeBitReversalHelpingArray(std::vector<int>& bitReversalHe
 
 void DftForImage::DoDftForImage()
 {
-    IterateRows();
+    DoDftForEachRow();
 }
 
-void DftForImage::IterateRows()
+void DftForImage::DoDftForEachRow()
 {
     for (int rowIndex = 0; rowIndex < _complexMat.rows; ++rowIndex)
     {

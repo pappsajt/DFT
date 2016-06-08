@@ -27,7 +27,7 @@ private:
     std::vector<int> _bitReversalHelpingArrayForColumnIndices;
 
     void DoDftForImage();
-    void IterateRows();
+    void DoDftForEachRow();
     void DftForRow(const int& currentRowOfComplexMat, const int& columnIndexOfBeginning, const int& length);
     void RestoreNaturalColumnIndexOrderFromReversedOrder();
     void ComputeMagnitude();
