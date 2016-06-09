@@ -74,7 +74,7 @@ void DftForImage::DoDftForEachColumn()
 
 void DftForImage::DftForRow(const int& currentRowOfComplexMat, const int& columnIndexOfBeginning, const int& length)
 {
-    for (int localIndex = 0; localIndex < length/2-1; ++localIndex)
+    for (int localIndex = 0; localIndex < length / 2-1; ++localIndex)
     {
         int firstIndex = columnIndexOfBeginning + localIndex;
         int secondIndex = firstIndex + length / 2;
@@ -88,8 +88,8 @@ void DftForImage::DftForRow(const int& currentRowOfComplexMat, const int& column
         std::complex<float> firstNewElement, secondNewElement;
         const float pi = std::acos(-1);
         const std::complex<float> i(0, 1);
-        firstNewElement = (a + b) / (float)2;
-        secondNewElement = (a - b) * std::exp((float)(-2)*pi*i*(float)localIndex/(float)length) / (float)2;
+        firstNewElement = (a + b);
+        secondNewElement = (a - b) * std::exp((float)(-2)*pi*i*(float)localIndex/(float)length);
 
         _complexMat.at<cv::Vec2f>(currentRowOfComplexMat, firstIndex) = {firstNewElement.real(), firstNewElement.imag()};
         _complexMat.at<cv::Vec2f>(currentRowOfComplexMat, secondIndex) = {secondNewElement.real(), secondNewElement.imag()};
@@ -104,7 +104,7 @@ void DftForImage::DftForRow(const int& currentRowOfComplexMat, const int& column
 
 void DftForImage::DftForColumn(const int& currentColumnOfComplexMat, const int& rowIndexOfBeginning, const int& length)
 {
-    for (int localIndex = 0; localIndex < length/2-1; ++localIndex)
+    for (int localIndex = 0; localIndex < length / 2-1; ++localIndex)
     {
         int firstIndex = rowIndexOfBeginning + localIndex;
         int secondIndex = firstIndex + length / 2;
@@ -118,8 +118,8 @@ void DftForImage::DftForColumn(const int& currentColumnOfComplexMat, const int& 
         std::complex<float> firstNewElement, secondNewElement;
         const float pi = std::acos(-1);
         const std::complex<float> i(0, 1);
-        firstNewElement = (a + b) / (float)2;
-        secondNewElement = (a - b) * std::exp((float)(-2)*pi*i*(float)localIndex/(float)length) / (float)2;
+        firstNewElement = (a + b);
+        secondNewElement = (a - b) * std::exp((float)(-2)*pi*i*(float)localIndex/(float)length);
 
         _complexMat.at<cv::Vec2f>(firstIndex, currentColumnOfComplexMat) = {firstNewElement.real(), firstNewElement.imag()};
         _complexMat.at<cv::Vec2f>(secondIndex, currentColumnOfComplexMat) = {secondNewElement.real(), secondNewElement.imag()};
@@ -178,7 +178,16 @@ void DftForImage::SwitchToLogarithmicScale()
 
 void DftForImage::RearrangeQuadrants()
 {
-    // rearrange the quadrants of Fourier image so that the origin is at the image center
+    // spread out the top-left quadrant of the image to the whole image
+    for (int i = _complexMat.rows - 1; i >= 0 ; --i)
+    {
+        for (int j = _complexMat.cols - 1; j >= 0; --j)
+        {
+            _magnitudeOfComplexMat.at<float>(i, j) = _magnitudeOfComplexMat.at<float>(i / 2, j / 2);
+        }
+    }
+
+    // rearrange the quadrants of Fourier image  so that the origin is at the image center
     int cx = _magnitudeOfComplexMat.cols/2;
     int cy = _magnitudeOfComplexMat.rows/2;
 
