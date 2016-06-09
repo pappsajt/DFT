@@ -49,6 +49,7 @@ void DftForImage::ComputeBitReversalHelpingArray(std::vector<int>& bitReversalHe
 void DftForImage::DoDftForImage()
 {
     DoDftForEachRow();
+    DoDftForEachColumn();
 }
 
 void DftForImage::DoDftForEachRow()
@@ -59,6 +60,16 @@ void DftForImage::DoDftForEachRow()
     }
 
     RestoreNaturalColumnIndexOrderFromReversedOrder();
+}
+
+void DftForImage::DoDftForEachColumn()
+{
+    for (int columnIndex = 0; columnIndex < _complexMat.cols; ++columnIndex)
+    {
+        DftForColumn(columnIndex, 0, _complexMat.rows);
+    }
+
+    RestoreNaturalRowIndexOrderFromReversedOrder();
 }
 
 void DftForImage::DftForRow(const int& currentRowOfComplexMat, const int& columnIndexOfBeginning, const int& length)
@@ -91,6 +102,36 @@ void DftForImage::DftForRow(const int& currentRowOfComplexMat, const int& column
     }
 }
 
+void DftForImage::DftForColumn(const int& currentColumnOfComplexMat, const int& rowIndexOfBeginning, const int& length)
+{
+    for (int localIndex = 0; localIndex < length/2-1; ++localIndex)
+    {
+        int firstIndex = rowIndexOfBeginning + localIndex;
+        int secondIndex = firstIndex + length / 2;
+
+        std::complex<float> a, b;
+        a.real(_complexMat.at<cv::Vec2f>(firstIndex, currentColumnOfComplexMat)[0]);
+        a.imag(_complexMat.at<cv::Vec2f>(firstIndex, currentColumnOfComplexMat)[1]);
+        b.real(_complexMat.at<cv::Vec2f>(secondIndex, currentColumnOfComplexMat)[0]);
+        b.imag(_complexMat.at<cv::Vec2f>(secondIndex, currentColumnOfComplexMat)[1]);
+
+        std::complex<float> firstNewElement, secondNewElement;
+        const float pi = std::acos(-1);
+        const std::complex<float> i(0, 1);
+        firstNewElement = (a + b) / (float)2;
+        secondNewElement = (a - b) * std::exp((float)(-2)*pi*i*(float)localIndex/(float)length) / (float)2;
+
+        _complexMat.at<cv::Vec2f>(firstIndex, currentColumnOfComplexMat) = {firstNewElement.real(), firstNewElement.imag()};
+        _complexMat.at<cv::Vec2f>(secondIndex, currentColumnOfComplexMat) = {secondNewElement.real(), secondNewElement.imag()};
+    }
+
+    if (length > 2)
+    {
+        DftForColumn(currentColumnOfComplexMat, rowIndexOfBeginning, length / 2);
+        DftForColumn(currentColumnOfComplexMat, rowIndexOfBeginning + length / 2, length / 2);
+    }
+}
+
 void DftForImage::RestoreNaturalColumnIndexOrderFromReversedOrder()
 {
     for (int i = 0; i < _complexMat.cols; ++i)
@@ -102,6 +143,21 @@ void DftForImage::RestoreNaturalColumnIndexOrderFromReversedOrder()
             cv::Mat tempColumn = _complexMat.col(i).clone();
             _complexMat.col(_bitReversalHelpingArrayForColumnIndices[i]).copyTo(_complexMat.col(i));
             tempColumn.copyTo(_complexMat.col(_bitReversalHelpingArrayForColumnIndices[i]));
+        }
+    }
+}
+
+void DftForImage::RestoreNaturalRowIndexOrderFromReversedOrder()
+{
+    for (int i = 0; i < _complexMat.rows; ++i)
+    {
+        if (i < _bitReversalHelpingArrayForRowIndices[i])
+        {
+            //swap _complexMat's i. row and _complexMat's _bitReversalHelpingArrayForColumnIndices[i]. row:
+
+            cv::Mat tempRow = _complexMat.row(i).clone();
+            _complexMat.row(_bitReversalHelpingArrayForRowIndices[i]).copyTo(_complexMat.row(i));
+            tempRow.copyTo(_complexMat.row(_bitReversalHelpingArrayForRowIndices[i]));
         }
     }
 }
@@ -156,6 +212,17 @@ void DftForImage::ShowResult()
     cv::namedWindow("Spectrum magnitude");
     cv::moveWindow("Spectrum magnitude", 600, 10);
     cv::imshow("Spectrum magnitude", _magnitudeOfComplexMat);
+
+    for (int i = 0; i < _magnitudeOfComplexMat.rows; ++i)
+    {
+        for (int j = 0; j < _magnitudeOfComplexMat.cols; ++j)
+        {
+            _magnitudeOfComplexMat.at<float>(i, j) = 255 * _magnitudeOfComplexMat.at<float>(i, j);
+        }
+    }
+
+    cv::imwrite("../source.png", _source);
+    cv::imwrite("../result.png", _magnitudeOfComplexMat);
 
     cv::waitKey();
     cv::destroyAllWindows();
