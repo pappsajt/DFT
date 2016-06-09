@@ -35,13 +35,36 @@ void ReadImage(cv::Mat& img)
 
     img = cv::imread(inputPath+nameOfImg, cv::IMREAD_GRAYSCALE);
 
-    while (!img.data)
+    bool numberOfRowsIsPowerOfTwo = true;
+    bool numberOfColumnsIsPowerOfTwo = true;
+
+    if (img.data)
     {
-        std::cout << std::endl << "Error! No such file, or opening file was not succesful!" << std::endl;
-        std::cout << std::endl << "Please enter the name of input image again: ";
+        numberOfRowsIsPowerOfTwo = ((img.rows & (img.rows - 1)) == 0);
+        numberOfColumnsIsPowerOfTwo = ((img.cols & (img.cols - 1)) == 0);
+    }
+
+    while (!img.data || !(numberOfRowsIsPowerOfTwo && numberOfColumnsIsPowerOfTwo))
+    {
+        if (!img.data)
+        {
+            std::cout << std::endl << "  Error - no such file, or opening file was not succesful!" << std::endl;
+            std::cout << "    Please enter the name of input image again: ";
+        }
+        else if (!(numberOfRowsIsPowerOfTwo && numberOfColumnsIsPowerOfTwo))
+        {
+            std::cout << std::endl << "  Error - not suitable image size!\n    Number of rows and number of columns have to be power of two!" << std::endl;
+            std::cout << "    Please enter the name of a suitable input image: ";
+        }
 
         std::getline(std::cin, nameOfImg);
 
         img = cv::imread(inputPath+nameOfImg, cv::IMREAD_GRAYSCALE);
+
+        if (img.data)
+        {
+            numberOfRowsIsPowerOfTwo = ((img.rows & (img.rows - 1)) == 0);
+            numberOfColumnsIsPowerOfTwo = ((img.cols & (img.cols - 1)) == 0);
+        }
     }
 }
