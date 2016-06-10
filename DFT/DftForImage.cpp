@@ -50,6 +50,9 @@ void DftForImage::DoDftForImage()
 {
     DoDftForEachRow();
     DoDftForEachColumn();
+
+    //to check our algorithm we can use cv::dft(_complexMat, _complexMat); instead of running
+    //DoDftForEachRow(); and DoDftForEachColumn();  -  so that we can compare the result images
 }
 
 void DftForImage::DoDftForEachRow()
@@ -74,22 +77,19 @@ void DftForImage::DoDftForEachColumn()
 
 void DftForImage::DftForRow(const int& currentRowOfComplexMat, const int& columnIndexOfBeginning, const int& length)
 {
-    for (int localIndex = 0; localIndex < length / 2-1; ++localIndex)
+    for (int localIndex = 0; localIndex <= length / 2 - 1; ++localIndex)
     {
         int firstIndex = columnIndexOfBeginning + localIndex;
         int secondIndex = firstIndex + length / 2;
 
-        std::complex<float> a, b;
-        a.real(_complexMat.at<cv::Vec2f>(currentRowOfComplexMat, firstIndex)[0]);
-        a.imag(_complexMat.at<cv::Vec2f>(currentRowOfComplexMat, firstIndex)[1]);
-        b.real(_complexMat.at<cv::Vec2f>(currentRowOfComplexMat, secondIndex)[0]);
-        b.imag(_complexMat.at<cv::Vec2f>(currentRowOfComplexMat, secondIndex)[1]);
+        std::complex<float> a(_complexMat.at<cv::Vec2f>(currentRowOfComplexMat, firstIndex)[0], _complexMat.at<cv::Vec2f>(currentRowOfComplexMat, firstIndex)[1]);
+        std::complex<float> b(_complexMat.at<cv::Vec2f>(currentRowOfComplexMat, secondIndex)[0], _complexMat.at<cv::Vec2f>(currentRowOfComplexMat, secondIndex)[1]);
 
-        std::complex<float> firstNewElement, secondNewElement;
-        const float pi = std::acos(-1);
-        const std::complex<float> i(0, 1);
-        firstNewElement = (a + b);
-        secondNewElement = (a - b) * std::exp((float)(-2)*pi*i*(float)localIndex/(float)length);
+        const float PI = std::acos(-1);
+        const std::complex<float> I(0, 1);
+
+        std::complex<float> firstNewElement(a + b);
+        std::complex<float> secondNewElement((a - b) * std::exp((float)(-2)*PI*I*(float)localIndex/(float)length));
 
         _complexMat.at<cv::Vec2f>(currentRowOfComplexMat, firstIndex) = {firstNewElement.real(), firstNewElement.imag()};
         _complexMat.at<cv::Vec2f>(currentRowOfComplexMat, secondIndex) = {secondNewElement.real(), secondNewElement.imag()};
@@ -104,22 +104,19 @@ void DftForImage::DftForRow(const int& currentRowOfComplexMat, const int& column
 
 void DftForImage::DftForColumn(const int& currentColumnOfComplexMat, const int& rowIndexOfBeginning, const int& length)
 {
-    for (int localIndex = 0; localIndex < length / 2-1; ++localIndex)
+    for (int localIndex = 0; localIndex <= length / 2 - 1; ++localIndex)
     {
         int firstIndex = rowIndexOfBeginning + localIndex;
         int secondIndex = firstIndex + length / 2;
 
-        std::complex<float> a, b;
-        a.real(_complexMat.at<cv::Vec2f>(firstIndex, currentColumnOfComplexMat)[0]);
-        a.imag(_complexMat.at<cv::Vec2f>(firstIndex, currentColumnOfComplexMat)[1]);
-        b.real(_complexMat.at<cv::Vec2f>(secondIndex, currentColumnOfComplexMat)[0]);
-        b.imag(_complexMat.at<cv::Vec2f>(secondIndex, currentColumnOfComplexMat)[1]);
+        std::complex<float> a(_complexMat.at<cv::Vec2f>(firstIndex, currentColumnOfComplexMat)[0], _complexMat.at<cv::Vec2f>(firstIndex, currentColumnOfComplexMat)[1]);
+        std::complex<float> b(_complexMat.at<cv::Vec2f>(secondIndex, currentColumnOfComplexMat)[0], _complexMat.at<cv::Vec2f>(secondIndex, currentColumnOfComplexMat)[1]);
 
-        std::complex<float> firstNewElement, secondNewElement;
-        const float pi = std::acos(-1);
-        const std::complex<float> i(0, 1);
-        firstNewElement = (a + b);
-        secondNewElement = (a - b) * std::exp((float)(-2)*pi*i*(float)localIndex/(float)length);
+        const float PI = std::acos(-1);
+        const std::complex<float> I(0, 1);
+
+        std::complex<float> firstNewElement(a + b);
+        std::complex<float> secondNewElement((a - b) * std::exp((float)(-2)*PI*I*(float)localIndex/(float)length));
 
         _complexMat.at<cv::Vec2f>(firstIndex, currentColumnOfComplexMat) = {firstNewElement.real(), firstNewElement.imag()};
         _complexMat.at<cv::Vec2f>(secondIndex, currentColumnOfComplexMat) = {secondNewElement.real(), secondNewElement.imag()};
@@ -164,29 +161,19 @@ void DftForImage::RestoreNaturalRowIndexOrderFromReversedOrder()
 
 void DftForImage::ComputeMagnitude()
 {
-    cv::split(_complexMat, _planes);                   // planes[0] = Re(DFT(_complexMat), planes[1] = Im(DFT(_complexMat))
-    cv::magnitude(_planes[0], _planes[1], _planes[0]); // planes[0] = magnitude
-    _magnitudeOfComplexMat = _planes[0];
+    cv::split(_complexMat, _planes); // planes[0] = Re(DFT(_complexMat), planes[1] = Im(DFT(_complexMat))
+    cv::magnitude(_planes[0], _planes[1], _magnitudeOfComplexMat);
 }
 
 void DftForImage::SwitchToLogarithmicScale()
 {
-    // switching to logarithmic scale: log(1 + sqrt(Re(DFT(_complexMat))^2 + Im(DFT(_complexMat))^2))
+    // switching to logarithmic scale (log(1 + sqrt(Re(DFT(_complexMat))^2 + Im(DFT(_complexMat))^2))):
     _magnitudeOfComplexMat += cv::Scalar::all(1);
     cv::log(_magnitudeOfComplexMat, _magnitudeOfComplexMat);
 }
 
 void DftForImage::RearrangeQuadrants()
 {
-    // spread out the top-left quadrant of the image to the whole image
-    for (int i = _complexMat.rows - 1; i >= 0 ; --i)
-    {
-        for (int j = _complexMat.cols - 1; j >= 0; --j)
-        {
-            _magnitudeOfComplexMat.at<float>(i, j) = _magnitudeOfComplexMat.at<float>(i / 2, j / 2);
-        }
-    }
-
     // rearrange the quadrants of Fourier image  so that the origin is at the image center
     int cx = _magnitudeOfComplexMat.cols/2;
     int cy = _magnitudeOfComplexMat.rows/2;
@@ -222,6 +209,7 @@ void DftForImage::ShowResult()
     cv::moveWindow("Spectrum magnitude", 600, 10);
     cv::imshow("Spectrum magnitude", _magnitudeOfComplexMat);
 
+    // to get a viewable saved image after imwrite we need pixel values between 0 and 255:
     for (int i = 0; i < _magnitudeOfComplexMat.rows; ++i)
     {
         for (int j = 0; j < _magnitudeOfComplexMat.cols; ++j)
